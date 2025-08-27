@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dashboard - Lead Scraper</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+      body { overflow-x: hidden; }
+      .sidebar { position: fixed; top: 0; bottom: 0; left: 0; width: 250px; padding: 20px; background: #f8f9fa; }
+      .content { margin-left: 270px; padding: 20px; }
+      .table-wrap { max-height: 60vh; overflow:auto; }
+    </style>
+  </head>
+  <body>
+    <div class="sidebar">
+      <h5>Lead Scraper</h5>
+      <hr>
+      <p class="text-muted">Logged in as {{ session['user'] }}</p>
+      <a href="{{ url_for('main.logout') }}" class="btn btn-outline-secondary btn-sm">Logout</a>
+    </div>
+    <div class="content">
+      <h3>Dashboard</h3>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      {% for category, message in messages %}
+      <div class="alert alert-{{ 'danger' if category=='error' else category }}">{{ message }}</div>
+      {% endfor %}
+      {% endif %}
+      {% endwith %}
+
+      <div class="card mb-3">
+        <div class="card-body">
+          <form method="post" action="{{ url_for('main.start_scrape') }}">
+            <div class="row g-3 align-items-end">
+              <div class="col-md-4">
+                <label class="form-label">Target URL (optional)</label>
+                <input name="target_url" class="form-control" placeholder="https://example.com/listings">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Keyword</label>
+                <input name="keyword" class="form-control" placeholder="restaurant">
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">Location</label>
+                <input name="location" class="form-control" placeholder="New York">
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Max Pages</label>
+                <input name="max_pages" type="number" class="form-control" value="5">
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Concurrency</label>
+                <input name="concurrency" type="number" class="form-control" value="10">
+              </div>
+              <div class="col-md-2">
+                <label class="form-label">Delay (s)</label>
+                <input name="delay" type="number" step="0.1" class="form-control" value="0.5">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Sources</label>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="checkbox" name="src_gmaps" id="src_gmaps" checked>
+                  <label class="form-check-label" for="src_gmaps">Google Maps</label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="checkbox" name="src_yelp_s" id="src_yelp_s" checked>
+                  <label class="form-check-label" for="src_yelp_s">Yelp (Selenium)</label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="checkbox" name="src_yelp_r" id="src_yelp_r">
+                  <label class="form-check-label" for="src_yelp_r">Yelp (Requests)</label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="checkbox" name="src_yp" id="src_yp">
+                  <label class="form-check-label" for="src_yp">Yellow Pages</label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="checkbox" name="src_gen_s" id="src_gen_s">
+                  <label class="form-check-label" for="src_gen_s">Generic (Selenium)</label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="checkbox" name="src_gen_h" id="src_gen_h">
+                  <label class="form-check-label" for="src_gen_h">Generic (HTML)</label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="checkbox" name="headless" id="headless" checked>
+                  <label class="form-check-label" for="headless">Headless</label>
+                </div>
+              </div>
+            </div>
+            <div class="mt-3">
+              <button class="btn btn-primary" type="submit">Start Scraping</button>
+              <a href="{{ url_for('main.export_csv_route') }}" class="btn btn-outline-secondary">Download CSV</a>
+              <a href="{{ url_for('main.export_excel_route') }}" class="btn btn-outline-secondary">Download Excel</a>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <h5 class="card-title">Leads ({{ leads|length }})</h5>
+          <div class="table-wrap">
+            <table class="table table-sm table-striped align-middle">
+              <thead>
+                <tr>
+                  <th>Name</th><th>Website</th><th>Email</th><th>Phone</th><th>Address</th><th>Source</th><th>Score</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in leads %}
+                <tr>
+                  <td>{{ r.name or r['name'] }}</td>
+                  <td><a href="{{ r.website or r['website'] }}" target="_blank">{{ r.website or r['website'] }}</a></td>
+                  <td>{{ r.email or r['email'] }}</td>
+                  <td>{{ r.phone or r['phone'] }}</td>
+                  <td>{{ r.address or r['address'] }}</td>
+                  <td>{{ r.source or r['source'] }}</td>
+                  <td>{{ r.score or r['score'] }}</td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>
